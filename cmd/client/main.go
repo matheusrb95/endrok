@@ -22,12 +22,21 @@ var sessionID int
 type Player struct {
 	Position rl.Vector2
 	Size     rl.Vector2
+	Life     int
+}
+
+type Ball struct {
+	Position rl.Vector2
+	Speed    rl.Vector2
+	Radius   float32
+	Active   bool
 }
 
 type Game struct {
 	Who     string
 	Player1 Player
 	Player2 Player
+	Ball    Ball
 }
 
 func main() {
@@ -114,11 +123,35 @@ func main() {
 			conn.Write(js)
 		}
 
+		if !game.Ball.Active {
+			if rl.IsKeyDown(rl.KeySpace) {
+				v := types.WSMessage{
+					SessionID: sessionID,
+					Type:      "ball",
+					Data:      []byte("SPACE"),
+				}
+				js, err := json.Marshal(v)
+				if err != nil {
+					log.Println("Error marshalling json: ", err)
+				}
+				conn.Write(js)
+			}
+		}
+
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.White)
 
 		rl.DrawRectangle(int32(game.Player1.Position.X-game.Player1.Size.X/2), int32(game.Player1.Position.Y-game.Player1.Size.Y/2), int32(game.Player1.Size.X), int32(game.Player1.Size.Y), rl.Black)
+		for i := 0; i < game.Player1.Life; i++ {
+			rl.DrawRectangle(int32(20+40*i), screenHeight-30, 35, 10, rl.LightGray)
+		}
+
 		rl.DrawRectangle(int32(game.Player2.Position.X-game.Player2.Size.X/2), int32(game.Player2.Position.Y-game.Player2.Size.Y/2), int32(game.Player2.Size.X), int32(game.Player2.Size.Y), rl.Black)
+		for i := 0; i < game.Player2.Life; i++ {
+			rl.DrawRectangle(int32(20+40*i), 30, 35, 10, rl.LightGray)
+		}
+
+		rl.DrawCircleV(game.Ball.Position, game.Ball.Radius, rl.Maroon)
 
 		rl.EndDrawing()
 	}
