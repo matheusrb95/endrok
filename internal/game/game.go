@@ -54,7 +54,7 @@ func (g *Game) Init() {
 	g.Ball.Active = false
 }
 
-func (g *Game) UpdateMoves(msg types.WSMessage) {
+func (g *Game) UpdateMoves(msg types.Message) {
 	if msg.SessionID == 1 && msg.Type == "mov" && string(msg.Data) == "LEFT" {
 		g.Player1.Position.X -= 8
 	}

@@ -3,12 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"time"
 
 	"github.com/matheusrb95/endrok/internal/game"
 	"github.com/matheusrb95/endrok/types"
 )
+
+const TickRate = 20 * time.Millisecond
 
 type Server struct {
 	listenAddr string
@@ -55,8 +58,24 @@ func (s *Server) acceptLoop() {
 
 		s.clients[conn] = struct{}{}
 
+		s.welcomeMsg(conn)
+
 		go s.handleClient(conn)
 	}
+}
+
+func (s *Server) welcomeMsg(conn net.Conn) {
+	msg := types.Message{
+		SessionID: len(s.clients),
+		Type:      "welcome",
+		Data:      nil,
+	}
+	js, err := json.Marshal(msg)
+	if err != nil {
+		log.Println("Error marshal: ", err)
+		return
+	}
+	conn.Write(js)
 }
 
 func (s *Server) handleClient(conn net.Conn) {
@@ -73,7 +92,7 @@ func (s *Server) handleClient(conn net.Conn) {
 			return
 		}
 
-		var msg types.WSMessage
+		var msg types.Message
 		err = json.Unmarshal(buf[:n], &msg)
 		if err != nil {
 			fmt.Println("error unmarshal:", err)
@@ -85,7 +104,7 @@ func (s *Server) handleClient(conn net.Conn) {
 }
 
 func (s *Server) sendGameUpdate() {
-	ticker := time.NewTicker(50 * time.Millisecond)
+	ticker := time.NewTicker(TickRate)
 	defer ticker.Stop()
 
 	for {

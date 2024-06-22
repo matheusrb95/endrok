@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 
@@ -17,14 +18,18 @@ const (
 	gameTitle    = "Paz de Bol"
 )
 
-var sessionID int
-
 func main() {
-	conn, err := net.Dial("tcp", "localhost:8000")
+	conn, err := net.Dial("tcp", "192.168.15.4:8000")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
+
+	sessionID, err := getSessionID(conn)
+	if err != nil {
+		fmt.Println("error getting session id:", err)
+		return
+	}
 
 	var game game.Game
 	go func() {
@@ -50,8 +55,8 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		if rl.IsKeyDown(rl.KeyLeft) || rl.IsKeyDown(rl.KeyA) {
-			v := types.WSMessage{
-				SessionID: 1,
+			v := types.Message{
+				SessionID: sessionID,
 				Type:      "mov",
 				Data:      []byte("LEFT"),
 			}
@@ -63,8 +68,8 @@ func main() {
 		}
 
 		if rl.IsKeyDown(rl.KeyRight) || rl.IsKeyDown(rl.KeyD) {
-			v := types.WSMessage{
-				SessionID: 1,
+			v := types.Message{
+				SessionID: sessionID,
 				Type:      "mov",
 				Data:      []byte("RIGHT"),
 			}
@@ -77,8 +82,8 @@ func main() {
 
 		if !game.Ball.Active {
 			if rl.IsKeyDown(rl.KeySpace) {
-				v := types.WSMessage{
-					SessionID: 1,
+				v := types.Message{
+					SessionID: sessionID,
 					Type:      "ball",
 					Data:      []byte("SPACE"),
 				}
@@ -109,4 +114,21 @@ func main() {
 	}
 
 	rl.CloseWindow()
+}
+
+func getSessionID(conn net.Conn) (int, error) {
+	buf := make([]byte, 4*1024)
+	n, err := conn.Read(buf)
+	if err != nil {
+		log.Println("Read error: ", err)
+	}
+
+	var msg types.Message
+	err = json.Unmarshal(buf[:n], &msg)
+	if err != nil {
+		log.Println("Error unmarshaling data: ", err)
+		return 0, err
+	}
+
+	return msg.SessionID, nil
 }
