@@ -1,14 +1,14 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"log"
+	"net"
 
+	"github.com/matheusrb95/endrok/internal/game"
 	"github.com/matheusrb95/endrok/types"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"nhooyr.io/websocket"
 )
 
 const (
@@ -19,87 +19,39 @@ const (
 
 var sessionID int
 
-type Player struct {
-	Position rl.Vector2
-	Size     rl.Vector2
-	Life     int
-}
-
-type Ball struct {
-	Position rl.Vector2
-	Speed    rl.Vector2
-	Radius   float32
-	Active   bool
-}
-
-type Game struct {
-	Who     string
-	Player1 Player
-	Player2 Player
-	Ball    Ball
-}
-
 func main() {
-	url := "ws://localhost:8000"
-	ctx := context.Background()
-	c, resp, err := websocket.Dial(ctx, url, nil)
+	conn, err := net.Dial("tcp", "localhost:8000")
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer conn.Close()
 
-	log.Println("Connection response: ", resp)
-
-	conn := websocket.NetConn(ctx, c, websocket.MessageBinary)
-
-	msg := make([]byte, 4*1024)
-	var wsMsg types.WSMessage
-	n, err := conn.Read(msg)
-	if err != nil {
-		log.Println("Read error: ", err)
-	}
-
-	err = json.Unmarshal(msg[:n], &wsMsg)
-	if err != nil {
-		log.Println("Error unmarshaling data: ", err)
-	}
-
-	log.Println(wsMsg)
-	sessionID = wsMsg.SessionID
-
-	rl.InitWindow(screenWidth, screenHeight, gameTitle)
-	rl.SetTargetFPS(60)
-
-	var game Game
-	game.Player1 = Player{
-		Position: rl.Vector2{X: float32(screenWidth / 2), Y: float32(screenHeight * 7 / 8)},
-		Size:     rl.Vector2{X: float32(screenWidth / 6), Y: 20},
-	}
-
-	game.Player2 = Player{
-		Position: rl.Vector2{X: float32(screenWidth / 2), Y: float32(screenHeight * 1 / 8)},
-		Size:     rl.Vector2{X: float32(screenWidth / 6), Y: 20},
-	}
-
+	var game game.Game
 	go func() {
-		msg := make([]byte, 4*1024)
+		buf := make([]byte, 4*1024)
 		for {
-			n, err := conn.Read(msg)
+			n, err := conn.Read(buf)
 			if err != nil {
 				log.Println("Read error: ", err)
 			}
 
-			err = json.Unmarshal(msg[:n], &game)
+			err = json.Unmarshal(buf[:n], &game)
 			if err != nil {
 				log.Println("Error unmarshaling data: ", err)
+				continue
 			}
+
 			log.Println(game)
 		}
 	}()
 
+	rl.InitWindow(screenWidth, screenHeight, gameTitle)
+	rl.SetTargetFPS(60)
+
 	for !rl.WindowShouldClose() {
 		if rl.IsKeyDown(rl.KeyLeft) || rl.IsKeyDown(rl.KeyA) {
 			v := types.WSMessage{
-				SessionID: sessionID,
+				SessionID: 1,
 				Type:      "mov",
 				Data:      []byte("LEFT"),
 			}
@@ -112,7 +64,7 @@ func main() {
 
 		if rl.IsKeyDown(rl.KeyRight) || rl.IsKeyDown(rl.KeyD) {
 			v := types.WSMessage{
-				SessionID: sessionID,
+				SessionID: 1,
 				Type:      "mov",
 				Data:      []byte("RIGHT"),
 			}
@@ -126,7 +78,7 @@ func main() {
 		if !game.Ball.Active {
 			if rl.IsKeyDown(rl.KeySpace) {
 				v := types.WSMessage{
-					SessionID: sessionID,
+					SessionID: 1,
 					Type:      "ball",
 					Data:      []byte("SPACE"),
 				}
