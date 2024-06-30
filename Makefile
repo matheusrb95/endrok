@@ -1,3 +1,6 @@
+run:
+	@go run cmd/client/*.go
+
 client:
 	@go run cmd/client/*.go
 
