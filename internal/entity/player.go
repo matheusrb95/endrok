@@ -117,3 +117,13 @@ func (p *Player) Update() {
 func (p *Player) Draw() {
 	rl.DrawTextureRec(*p.texture, p.frameRec, p.Position, rl.White)
 }
+
+func (p *Player) Rectangle() rl.Rectangle {
+	return rl.NewRectangle(p.Position.X, p.Position.Y, float32(spriteSize), float32(spriteSize))
+}
+
+func (p *Player) DrawHitbox(coliding bool) {
+	if coliding {
+		rl.DrawRectangleLinesEx(p.Rectangle(), 3, rl.Red)
+	}
+}
