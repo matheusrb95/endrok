@@ -5,6 +5,10 @@ import (
 	"github.com/matheusrb95/endrok/internal/entity"
 )
 
+const (
+	spriteSize = 192
+)
+
 var (
 	Obstacle = rl.NewRectangle(600, 600, 250, 250)
 )
@@ -75,7 +79,7 @@ func (g *Game) Update() {
 }
 
 func (g *Game) Draw() {
-	coliding := rl.CheckCollisionRecs(g.Player.Rectangle(), Obstacle)
+	coliding := rl.CheckCollisionRecs(g.Player.Hitbox(), Obstacle)
 
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.RayWhite)

@@ -6,7 +6,7 @@ const (
 	numFrames   = 6
 	spriteSize  = 192
 	frameDelay  = 6
-	playerSpeed = 3
+	playerSpeed = 200
 
 	initLocationX = 350
 	initLocationY = 250
@@ -85,7 +85,7 @@ func (p *Player) Attack() {
 }
 
 func (p *Player) Update() {
-	p.Position = rl.Vector2Add(p.Position, rl.Vector2Scale(rl.Vector2Normalize(p.Velocity), float32(playerSpeed)))
+	p.Position = rl.Vector2Add(p.Position, rl.Vector2Scale(rl.Vector2Normalize(p.Velocity), rl.GetFrameTime()*float32(playerSpeed)))
 	p.Walking = p.Velocity != rl.NewVector2(0, 0)
 
 	p.frameCounter++
@@ -115,15 +115,18 @@ func (p *Player) Update() {
 }
 
 func (p *Player) Draw() {
+	rec := rl.NewRectangle(p.Position.X+spriteSize/2-35, p.Position.Y+30, 70, 10)
+	rl.DrawRectangleRec(rec, rl.Green)
+	rl.DrawRectangleLinesEx(rec, 3, rl.Black)
 	rl.DrawTextureRec(*p.texture, p.frameRec, p.Position, rl.White)
 }
 
-func (p *Player) Rectangle() rl.Rectangle {
+func (p *Player) Hitbox() rl.Rectangle {
 	return rl.NewRectangle(p.Position.X, p.Position.Y, float32(spriteSize), float32(spriteSize))
 }
 
 func (p *Player) DrawHitbox(coliding bool) {
 	if coliding {
-		rl.DrawRectangleLinesEx(p.Rectangle(), 3, rl.Red)
+		rl.DrawRectangleLinesEx(p.Hitbox(), 3, rl.Red)
 	}
 }

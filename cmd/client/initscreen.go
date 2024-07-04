@@ -11,6 +11,7 @@ type InitScreen struct {
 	Title       *entity.Button
 	StartButton *entity.Button
 	ExitButton  *entity.Button
+	Selector    *entity.Button
 }
 
 func NewInitScreen() *InitScreen {
@@ -19,6 +20,7 @@ func NewInitScreen() *InitScreen {
 		Title:       entity.NewButton("assets/title.png", rl.NewVector2(screenWidth/2-160, 50)),
 		StartButton: entity.NewButton("assets/button.png", rl.NewVector2(screenWidth/2-96, 200)),
 		ExitButton:  entity.NewButton("assets/button.png", rl.NewVector2(screenWidth/2-96, 300)),
+		Selector:    entity.NewButton("assets/selector.png", rl.NewVector2(0, 0)),
 	}
 }
 

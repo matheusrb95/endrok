@@ -8,8 +8,6 @@ const (
 	screenWidth  = 800
 	screenHeight = 600
 	gameTitle    = "Quebra Castelo"
-
-	spriteSize = 192
 )
 
 func main() {
