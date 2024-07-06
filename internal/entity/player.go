@@ -1,12 +1,13 @@
 package entity
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 const (
-	numFrames   = 6
-	spriteSize  = 192
-	frameDelay  = 6
-	playerSpeed = 200
+	numFrames  = 6
+	spriteSize = 192
+	frameDelay = 6
 
 	initLocationX = 350
 	initLocationY = 250
@@ -24,11 +25,12 @@ const (
 )
 
 type Player struct {
-	Position rl.Vector2
-	Velocity rl.Vector2
+	Position  rl.Vector2
+	Direction rl.Vector2
 
 	Walking   bool
 	Attacking bool
+	Speed     int
 
 	texture  *rl.Texture2D
 	frameRec rl.Rectangle
@@ -42,18 +44,19 @@ func NewPlayer(tx *rl.Texture2D) *Player {
 		texture:  tx,
 		Position: rl.NewVector2(initLocationX, initLocationY),
 		frameRec: rl.NewRectangle(0, 0, float32(spriteSize), float32(spriteSize)),
+		Speed:    200,
 	}
 }
 
 func (p *Player) GoUp() {
 	if !p.Attacking {
-		p.Velocity.Y = -1
+		p.Direction.Y = -1
 	}
 }
 
 func (p *Player) GoDown() {
 	if !p.Attacking {
-		p.Velocity.Y = 1
+		p.Direction.Y = 1
 	}
 }
 
@@ -63,7 +66,7 @@ func (p *Player) GoLeft() {
 			p.frameRec.Width *= -1
 		}
 
-		p.Velocity.X = -1
+		p.Direction.X = -1
 	}
 }
 
@@ -73,7 +76,7 @@ func (p *Player) GoRight() {
 			p.frameRec.Width *= -1
 		}
 
-		p.Velocity.X = 1
+		p.Direction.X = 1
 	}
 }
 
@@ -85,8 +88,7 @@ func (p *Player) Attack() {
 }
 
 func (p *Player) Update() {
-	p.Position = rl.Vector2Add(p.Position, rl.Vector2Scale(rl.Vector2Normalize(p.Velocity), rl.GetFrameTime()*float32(playerSpeed)))
-	p.Walking = p.Velocity != rl.NewVector2(0, 0)
+	p.Walking = p.Direction != rl.NewVector2(0, 0)
 
 	p.frameCounter++
 	if p.frameCounter >= frameDelay {
@@ -121,12 +123,23 @@ func (p *Player) Draw() {
 	rl.DrawTextureRec(*p.texture, p.frameRec, p.Position, rl.White)
 }
 
-func (p *Player) Hitbox() rl.Rectangle {
-	return rl.NewRectangle(p.Position.X, p.Position.Y, float32(spriteSize), float32(spriteSize))
+func (p *Player) MoveHitbox() rl.Rectangle {
+	return rl.NewRectangle(p.Position.X+75, p.Position.Y+120, 45, 18)
+	//eturn rl.NewRectangle(p.Position.X, p.Position.Y, spriteSize, spriteSize)
 }
 
-func (p *Player) DrawHitbox(coliding bool) {
+func (p *Player) DrawMoveHitbox(coliding bool) {
 	if coliding {
-		rl.DrawRectangleLinesEx(p.Hitbox(), 3, rl.Red)
+		rl.DrawRectangleLinesEx(p.MoveHitbox(), 3, rl.Red)
+	}
+}
+
+func (p *Player) AttackHitbox() rl.Vector2 {
+	return rl.NewVector2(p.Position.X+spriteSize/2, p.Position.Y+spriteSize/2)
+}
+
+func (p *Player) DrawAttackHitbox(coliding bool) {
+	if coliding && p.Attacking {
+		rl.DrawCircleLines(int32(p.AttackHitbox().X), int32(p.AttackHitbox().Y), 90, rl.Green)
 	}
 }

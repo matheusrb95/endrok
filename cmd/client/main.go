@@ -10,32 +10,34 @@ const (
 	gameTitle    = "Quebra Castelo"
 )
 
+const (
+	Menu = iota
+	Run
+	Quit
+)
+
+var ApplicationState = Run
+
 func main() {
 	rl.InitWindow(screenWidth, screenHeight, gameTitle)
 	rl.SetTargetFPS(60)
 
-	init := NewInitScreen()
+	mainMenu := NewMainMenu()
 	game := NewGame()
-	startGame := false
 
-	for !rl.WindowShouldClose() {
+	for !rl.WindowShouldClose() && ApplicationState != Quit {
 
-		if !startGame {
-			if init.Exit() {
-				break
-			} else if init.Start() {
-				init.Unload()
-				startGame = true
-			} else {
-				init.Update()
-			}
-		} else {
+		switch ApplicationState {
+		case Menu:
+			mainMenu.Update()
+			mainMenu.Draw()
+		case Run:
 			game.Update()
 			game.Draw()
 		}
 	}
 
-	init.Unload()
+	mainMenu.Unload()
 	game.Unload()
 	rl.CloseWindow()
 }

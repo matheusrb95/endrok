@@ -6,17 +6,17 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-type InitScreen struct {
-	Background  rl.Texture2D
+type MainMenu struct {
+	Background  *entity.Background
 	Title       *entity.Button
 	StartButton *entity.Button
 	ExitButton  *entity.Button
 	Selector    *entity.Button
 }
 
-func NewInitScreen() *InitScreen {
-	return &InitScreen{
-		Background:  rl.LoadTexture("assets/background.png"),
+func NewMainMenu() *MainMenu {
+	return &MainMenu{
+		Background:  entity.NewBackground("assets/background.png", rl.Vector2Zero()),
 		Title:       entity.NewButton("assets/title.png", rl.NewVector2(screenWidth/2-160, 50)),
 		StartButton: entity.NewButton("assets/button.png", rl.NewVector2(screenWidth/2-96, 200)),
 		ExitButton:  entity.NewButton("assets/button.png", rl.NewVector2(screenWidth/2-96, 300)),
@@ -24,35 +24,45 @@ func NewInitScreen() *InitScreen {
 	}
 }
 
-func (s *InitScreen) Unload() {
-	s.Title.Unload()
-	s.StartButton.Unload()
-	s.ExitButton.Unload()
-	rl.UnloadTexture(s.Background)
+func (m *MainMenu) Unload() {
+	m.Background.Unload()
+	m.Title.Unload()
+	m.StartButton.Unload()
+	m.ExitButton.Unload()
+	m.Selector.Unload()
 }
 
-func (s *InitScreen) Update() {
+func (m *MainMenu) Update() {
+	if m.Start() {
+		ApplicationState = Run
+		return
+	}
+	if m.Exit() {
+		ApplicationState = Quit
+		return
+	}
+}
+
+func (m *MainMenu) Draw() {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.RayWhite)
 
-	sourceRec := rl.NewRectangle(float32(s.Background.Width/2)-screenWidth/2, 0, float32(s.Background.Width), float32(s.Background.Height))
-	position := rl.NewVector2(0, 0)
-	rl.DrawTextureRec(s.Background, sourceRec, position, rl.White)
-	s.Title.Draw()
+	m.Background.Draw()
+	m.Title.Draw()
 	rl.DrawText("Quebra Castelo", screenWidth/2-120, 60, 30, rl.RayWhite)
-	s.StartButton.Draw()
+	m.StartButton.Draw()
 	rl.DrawText("Start", screenWidth/2-40, 210, 30, rl.RayWhite)
-	s.ExitButton.Draw()
+	m.ExitButton.Draw()
 	rl.DrawText("Exit", screenWidth/2-30, 310, 30, rl.RayWhite)
 
 	rl.EndMode2D()
 	rl.EndDrawing()
 }
 
-func (s *InitScreen) Start() bool {
-	return s.StartButton.Pressed(rl.GetMousePosition(), rl.IsMouseButtonPressed(rl.MouseButtonLeft))
+func (m *MainMenu) Start() bool {
+	return m.StartButton.Pressed(rl.GetMousePosition(), rl.IsMouseButtonPressed(rl.MouseButtonLeft))
 }
 
-func (s *InitScreen) Exit() bool {
-	return s.ExitButton.Pressed(rl.GetMousePosition(), rl.IsMouseButtonPressed(rl.MouseButtonLeft))
+func (m *MainMenu) Exit() bool {
+	return m.ExitButton.Pressed(rl.GetMousePosition(), rl.IsMouseButtonPressed(rl.MouseButtonLeft))
 }

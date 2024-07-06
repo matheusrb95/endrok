@@ -1,8 +1,10 @@
 package main
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/matheusrb95/endrok/internal/entity"
+	"github.com/matheusrb95/endrok/internal/physics"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const (
@@ -10,7 +12,8 @@ const (
 )
 
 var (
-	Obstacle = rl.NewRectangle(600, 600, 250, 250)
+	Obstacle  = rl.NewRectangle(600, 600, 250, 250)
+	Obstacles = []rl.Rectangle{Obstacle}
 )
 
 type Textures struct {
@@ -36,6 +39,8 @@ func (g *Game) Init() {
 	g.Map = entity.NewMap(&g.Textures.Map)
 	g.Player = entity.NewPlayer(&g.Textures.Player)
 
+	Obstacles = append(Obstacles, g.Map.Obstacles()...)
+
 	g.Camera = rl.Camera2D{
 		Target:   rl.NewVector2(0, 0),
 		Offset:   rl.NewVector2(screenWidth/2, screenHeight/2),
@@ -55,7 +60,7 @@ func (g *Game) Unload() {
 }
 
 func (g *Game) Update() {
-	g.Player.Velocity = rl.NewVector2(0, 0)
+	g.Player.Direction = rl.NewVector2(0, 0)
 
 	if rl.IsKeyDown(rl.KeyD) {
 		g.Player.GoRight()
@@ -73,13 +78,16 @@ func (g *Game) Update() {
 		g.Player.Attack()
 	}
 
+	physics.Move(g.Player, Obstacles)
+
 	g.Player.Update()
 
 	g.Camera.Target = rl.Vector2AddValue(g.Player.Position, spriteSize/2)
 }
 
 func (g *Game) Draw() {
-	coliding := rl.CheckCollisionRecs(g.Player.Hitbox(), Obstacle)
+	coliding := rl.CheckCollisionRecs(g.Player.MoveHitbox(), Obstacle)
+	attackColiding := rl.CheckCollisionCircleRec(g.Player.AttackHitbox(), spriteSize/2, Obstacle)
 
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.RayWhite)
@@ -88,7 +96,8 @@ func (g *Game) Draw() {
 
 	g.Map.Draw()
 	g.Player.Draw()
-	g.Player.DrawHitbox(coliding)
+	g.Player.DrawMoveHitbox(coliding)
+	g.Player.DrawAttackHitbox(attackColiding)
 	rl.DrawRectangleLinesEx(Obstacle, 5, rl.Black)
 
 	rl.EndMode2D()
