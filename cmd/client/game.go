@@ -11,21 +11,18 @@ const (
 	spriteSize = 192
 )
 
-var (
-	Obstacle  = rl.NewRectangle(600, 600, 250, 250)
-	Obstacles = []rl.Rectangle{Obstacle}
-)
-
 type Textures struct {
 	Map    rl.Texture2D
+	MapTop rl.Texture2D
 	Player rl.Texture2D
 }
 
 type Game struct {
-	Camera   rl.Camera2D
-	Map      *entity.Map
-	Player   *entity.Player
-	Textures Textures
+	Camera    rl.Camera2D
+	Map       *entity.Map
+	Player    *entity.Player
+	Textures  Textures
+	Obstacles []rl.Rectangle
 }
 
 func NewGame() (g Game) {
@@ -36,10 +33,10 @@ func NewGame() (g Game) {
 func (g *Game) Init() {
 	g.Load()
 
-	g.Map = entity.NewMap(&g.Textures.Map)
+	g.Map = entity.NewMap(&g.Textures.Map, &g.Textures.MapTop)
 	g.Player = entity.NewPlayer(&g.Textures.Player)
 
-	Obstacles = append(Obstacles, g.Map.Obstacles()...)
+	g.Obstacles = g.Map.Obstacles()
 
 	g.Camera = rl.Camera2D{
 		Target:   rl.NewVector2(0, 0),
@@ -51,11 +48,13 @@ func (g *Game) Init() {
 
 func (g *Game) Load() {
 	g.Textures.Map = rl.LoadTexture("assets/map.png")
+	g.Textures.MapTop = rl.LoadTexture("assets/map_top.png")
 	g.Textures.Player = rl.LoadTexture("assets/knight_blue.png")
 }
 
 func (g *Game) Unload() {
 	rl.UnloadTexture(g.Textures.Map)
+	rl.UnloadTexture(g.Textures.MapTop)
 	rl.UnloadTexture(g.Textures.Player)
 }
 
@@ -78,7 +77,7 @@ func (g *Game) Update() {
 		g.Player.Attack()
 	}
 
-	physics.Move(g.Player, Obstacles)
+	physics.Move(g.Player, g.Obstacles)
 
 	g.Player.Update()
 
@@ -86,9 +85,6 @@ func (g *Game) Update() {
 }
 
 func (g *Game) Draw() {
-	coliding := rl.CheckCollisionRecs(g.Player.MoveHitbox(), Obstacle)
-	attackColiding := rl.CheckCollisionCircleRec(g.Player.AttackHitbox(), spriteSize/2, Obstacle)
-
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.RayWhite)
 
@@ -96,9 +92,9 @@ func (g *Game) Draw() {
 
 	g.Map.Draw()
 	g.Player.Draw()
-	g.Player.DrawMoveHitbox(coliding)
-	g.Player.DrawAttackHitbox(attackColiding)
-	rl.DrawRectangleLinesEx(Obstacle, 5, rl.Black)
+	g.Map.DrawTop()
+
+	//g.Map.DrawObstacles()
 
 	rl.EndMode2D()
 	rl.EndDrawing()

@@ -9,8 +9,8 @@ const (
 	spriteSize = 192
 	frameDelay = 6
 
-	initLocationX = 350
-	initLocationY = 250
+	initLocationX = 1024
+	initLocationY = 1024
 )
 
 const (
@@ -125,7 +125,6 @@ func (p *Player) Draw() {
 
 func (p *Player) MoveHitbox() rl.Rectangle {
 	return rl.NewRectangle(p.Position.X+75, p.Position.Y+120, 45, 18)
-	//eturn rl.NewRectangle(p.Position.X, p.Position.Y, spriteSize, spriteSize)
 }
 
 func (p *Player) DrawMoveHitbox(coliding bool) {
@@ -134,12 +133,18 @@ func (p *Player) DrawMoveHitbox(coliding bool) {
 	}
 }
 
-func (p *Player) AttackHitbox() rl.Vector2 {
-	return rl.NewVector2(p.Position.X+spriteSize/2, p.Position.Y+spriteSize/2)
+func (p *Player) AttackHitbox() {
+	center := rl.NewVector2(p.Position.X+float32(spriteSize)/2, p.Position.Y+float32(spriteSize)/2)
+	radius := float32(90)
+	startAngle := float32(-75)
+	endAngle := float32(30)
+
+	rl.DrawCircleSector(center, radius, startAngle, endAngle, 20, rl.Black)
 }
 
 func (p *Player) DrawAttackHitbox(coliding bool) {
 	if coliding && p.Attacking {
-		rl.DrawCircleLines(int32(p.AttackHitbox().X), int32(p.AttackHitbox().Y), 90, rl.Green)
+		p.AttackHitbox()
+		//rl.DrawCircleLines(int32(p.AttackHitbox().X), int32(p.AttackHitbox().Y), 90, rl.Green)
 	}
 }
