@@ -30,6 +30,7 @@ type Player struct {
 
 	Walking   bool
 	Attacking bool
+	Hit       bool
 	Speed     int
 
 	texture  *rl.Texture2D
@@ -37,6 +38,8 @@ type Player struct {
 
 	frameCounter int
 	frameIndex   int
+
+	color rl.Color
 }
 
 func NewPlayer(tx *rl.Texture2D) *Player {
@@ -45,6 +48,7 @@ func NewPlayer(tx *rl.Texture2D) *Player {
 		Position: rl.NewVector2(initLocationX, initLocationY),
 		frameRec: rl.NewRectangle(0, 0, float32(spriteSize), float32(spriteSize)),
 		Speed:    200,
+		color:    rl.White,
 	}
 }
 
@@ -87,6 +91,13 @@ func (p *Player) Attack() {
 	}
 }
 
+func (p *Player) Hitted() {
+	if !p.Hit {
+		p.frameIndex = 0
+		p.Hit = true
+	}
+}
+
 func (p *Player) Update() {
 	p.Walking = p.Direction != rl.NewVector2(0, 0)
 
@@ -112,6 +123,18 @@ func (p *Player) Update() {
 			p.frameRec.Y = spriteSize * Idle
 		}
 
+		if p.Hit {
+			if p.frameIndex%2 == 0 {
+				p.color = rl.NewColor(255, 255, 255, 150)
+			} else {
+				p.color = rl.White
+			}
+
+			if p.frameIndex == 5 {
+				p.Hit = false
+			}
+		}
+
 		p.frameRec.X = float32(spriteSize * p.frameIndex)
 	}
 }
@@ -120,31 +143,48 @@ func (p *Player) Draw() {
 	rec := rl.NewRectangle(p.Position.X+spriteSize/2-35, p.Position.Y+30, 70, 10)
 	rl.DrawRectangleRec(rec, rl.Green)
 	rl.DrawRectangleLinesEx(rec, 3, rl.Black)
-	rl.DrawTextureRec(*p.texture, p.frameRec, p.Position, rl.White)
+	rl.DrawTextureRec(*p.texture, p.frameRec, p.Position, p.color)
 }
 
 func (p *Player) MoveHitbox() rl.Rectangle {
 	return rl.NewRectangle(p.Position.X+75, p.Position.Y+120, 45, 18)
 }
 
-func (p *Player) DrawMoveHitbox(coliding bool) {
-	if coliding {
-		rl.DrawRectangleLinesEx(p.MoveHitbox(), 3, rl.Red)
+func (p *Player) AttackHitbox() rl.Rectangle {
+	var result rl.Rectangle
+
+	topSprite := rl.NewVector2(p.Position.X+spriteSize/2, p.Position.Y)
+	offsetX := float32(25)
+	offsetY := float32(25)
+	attackWidth := float32(60)
+	attackHeight := float32(110)
+
+	pos := rl.NewVector2(topSprite.X+offsetX, topSprite.Y+offsetY)
+	if p.frameRec.Width < 0 {
+		pos = rl.NewVector2(topSprite.X-offsetX-attackWidth, topSprite.Y+offsetY)
+	}
+
+	if p.Attacking {
+		result = rl.NewRectangle(pos.X, pos.Y, attackWidth, attackHeight)
+	}
+
+	return result
+}
+
+func (p *Player) DamageHitbox() rl.Rectangle {
+	return rl.NewRectangle(p.Position.X+75, p.Position.Y+60, 45, 60)
+}
+
+func (p *Player) DrawAttackHitbox() {
+	if p.Attacking {
+		rl.DrawRectangleLinesEx(p.AttackHitbox(), 2, rl.Red)
 	}
 }
 
-func (p *Player) AttackHitbox() {
-	center := rl.NewVector2(p.Position.X+float32(spriteSize)/2, p.Position.Y+float32(spriteSize)/2)
-	radius := float32(90)
-	startAngle := float32(-75)
-	endAngle := float32(30)
-
-	rl.DrawCircleSector(center, radius, startAngle, endAngle, 20, rl.Black)
+func (p *Player) DrawMoveHitbox() {
+	rl.DrawRectangleLinesEx(p.MoveHitbox(), 2, rl.Green)
 }
 
-func (p *Player) DrawAttackHitbox(coliding bool) {
-	if coliding && p.Attacking {
-		p.AttackHitbox()
-		//rl.DrawCircleLines(int32(p.AttackHitbox().X), int32(p.AttackHitbox().Y), 90, rl.Green)
-	}
+func (p *Player) DrawDamageHitbox() {
+	rl.DrawRectangleLinesEx(p.DamageHitbox(), 2, rl.Blue)
 }
