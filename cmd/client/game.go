@@ -12,17 +12,19 @@ const (
 )
 
 type Textures struct {
-	Map     rl.Texture2D
-	MapTop  rl.Texture2D
-	Player  rl.Texture2D
-	Player2 rl.Texture2D
+	Map    rl.Texture2D
+	MapTop rl.Texture2D
+	Player rl.Texture2D
+	Enemy  rl.Texture2D
+	Death  rl.Texture2D
 }
 
 type Game struct {
 	Camera    rl.Camera2D
 	Map       *entity.Map
 	Player    *entity.Player
-	Player2   *entity.Player
+	Enemy     *entity.Player
+	Death     *entity.Death
 	Textures  Textures
 	Obstacles []rl.Rectangle
 }
@@ -37,7 +39,8 @@ func (g *Game) Init() {
 
 	g.Map = entity.NewMap(&g.Textures.Map, &g.Textures.MapTop)
 	g.Player = entity.NewPlayer(&g.Textures.Player)
-	g.Player2 = entity.NewPlayer(&g.Textures.Player2)
+	g.Enemy = entity.NewPlayer(&g.Textures.Enemy)
+	g.Death = entity.NewDeath(&g.Textures.Death, rl.NewVector2(1024+32, 1024+32))
 
 	g.Obstacles = g.Map.Obstacles()
 
@@ -53,19 +56,21 @@ func (g *Game) Load() {
 	g.Textures.Map = rl.LoadTexture("assets/map.png")
 	g.Textures.MapTop = rl.LoadTexture("assets/map_top.png")
 	g.Textures.Player = rl.LoadTexture("assets/knight_blue.png")
-	g.Textures.Player2 = rl.LoadTexture("assets/knight_purple.png")
+	g.Textures.Enemy = rl.LoadTexture("assets/torch_red.png")
+	g.Textures.Death = rl.LoadTexture("assets/dead.png")
 }
 
 func (g *Game) Unload() {
 	rl.UnloadTexture(g.Textures.Map)
 	rl.UnloadTexture(g.Textures.MapTop)
 	rl.UnloadTexture(g.Textures.Player)
-	rl.UnloadTexture(g.Textures.Player2)
+	rl.UnloadTexture(g.Textures.Enemy)
+	rl.UnloadTexture(g.Textures.Death)
 }
 
 func (g *Game) Update() {
 	g.Player.Direction = rl.NewVector2(0, 0)
-	g.Player2.Direction = rl.NewVector2(0, 0)
+	g.Enemy.Direction = rl.NewVector2(0, 0)
 
 	if rl.IsKeyDown(rl.KeyD) {
 		g.Player.GoRight()
@@ -84,33 +89,37 @@ func (g *Game) Update() {
 	}
 
 	if rl.IsKeyDown(rl.KeyL) {
-		g.Player2.GoRight()
+		g.Enemy.GoRight()
 	} else if rl.IsKeyDown(rl.KeyJ) {
-		g.Player2.GoLeft()
+		g.Enemy.GoLeft()
 	}
 
 	if rl.IsKeyDown(rl.KeyI) {
-		g.Player2.GoUp()
+		g.Enemy.GoUp()
 	} else if rl.IsKeyDown(rl.KeyK) {
-		g.Player2.GoDown()
+		g.Enemy.GoDown()
 	}
 
 	if rl.IsKeyDown(rl.KeyU) {
-		g.Player2.Attack()
+		g.Enemy.Attack()
 	}
 
 	physics.Move(g.Player, g.Obstacles)
-	physics.Move(g.Player2, g.Obstacles)
+	physics.Move(g.Enemy, g.Obstacles)
 
-	if rl.CheckCollisionRecs(g.Player.DamageHitbox(), g.Player2.AttackHitbox()) {
-		g.Player.Hit = true
+	if rl.CheckCollisionRecs(g.Player.DamageHitbox(), g.Enemy.AttackHitbox()) {
+		g.Player.Hitted()
 	}
-	if rl.CheckCollisionRecs(g.Player2.DamageHitbox(), g.Player.AttackHitbox()) {
-		g.Player2.Hit = true
+	if rl.CheckCollisionRecs(g.Enemy.DamageHitbox(), g.Player.AttackHitbox()) {
+		g.Enemy.Hitted()
 	}
 
+	if g.Enemy.Health == 0 {
+		g.Death.Update()
+	} else {
+		g.Enemy.Update()
+	}
 	g.Player.Update()
-	g.Player2.Update()
 
 	g.Camera.Target = rl.Vector2AddValue(g.Player.Position, spriteSize/2)
 }
@@ -123,12 +132,16 @@ func (g *Game) Draw() {
 
 	g.Map.Draw()
 	g.Player.Draw()
-	g.Player2.Draw()
+	if g.Enemy.Health == 0 {
+		g.Death.Draw()
+	} else {
+		g.Enemy.Draw()
+	}
 	g.Map.DrawTop()
 
-	// g.Player.DrawAttackHitbox()
-	// g.Player.DrawMoveHitbox()
-	// g.Player.DrawDamageHitbox()
+	// g.Enemy.DrawAttackHitbox()
+	// g.Enemy.DrawMoveHitbox()
+	// g.Enemy.DrawDamageHitbox()
 	// g.Map.DrawObstacles()
 
 	rl.EndMode2D()

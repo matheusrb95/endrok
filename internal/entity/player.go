@@ -1,8 +1,6 @@
 package entity
 
-import (
-	rl "github.com/gen2brain/raylib-go/raylib"
-)
+import rl "github.com/gen2brain/raylib-go/raylib"
 
 const (
 	numFrames  = 6
@@ -16,12 +14,7 @@ const (
 const (
 	Idle = iota
 	Walking
-	AttackSideType1
-	AttackSideType2
-	AttackDownType1
-	AttackDownType2
-	AttackUpType1
-	AttackUpType2
+	Attack
 )
 
 type Player struct {
@@ -31,7 +24,9 @@ type Player struct {
 	Walking   bool
 	Attacking bool
 	Hit       bool
-	Speed     int
+
+	Speed  int
+	Health float32
 
 	texture  *rl.Texture2D
 	frameRec rl.Rectangle
@@ -48,6 +43,7 @@ func NewPlayer(tx *rl.Texture2D) *Player {
 		Position: rl.NewVector2(initLocationX, initLocationY),
 		frameRec: rl.NewRectangle(0, 0, float32(spriteSize), float32(spriteSize)),
 		Speed:    200,
+		Health:   1,
 		color:    rl.White,
 	}
 }
@@ -95,6 +91,7 @@ func (p *Player) Hitted() {
 	if !p.Hit {
 		p.frameIndex = 0
 		p.Hit = true
+		p.Health -= 0.25
 	}
 }
 
@@ -104,24 +101,6 @@ func (p *Player) Update() {
 	p.frameCounter++
 	if p.frameCounter >= frameDelay {
 		p.frameCounter = 0
-
-		if p.Walking {
-			p.frameIndex++
-			p.frameIndex %= numFrames
-			p.frameRec.Y = spriteSize * Walking
-		} else if p.Attacking {
-			p.frameIndex++
-			p.frameIndex %= numFrames
-			p.frameRec.Y = spriteSize * AttackSideType1
-
-			if p.frameIndex == 5 {
-				p.Attacking = false
-			}
-		} else {
-			p.frameIndex++
-			p.frameIndex %= numFrames
-			p.frameRec.Y = spriteSize * Idle
-		}
 
 		if p.Hit {
 			if p.frameIndex%2 == 0 {
@@ -135,15 +114,40 @@ func (p *Player) Update() {
 			}
 		}
 
+		if p.Walking {
+			p.frameIndex++
+			p.frameIndex %= numFrames
+			p.frameRec.Y = spriteSize * Walking
+		} else if p.Attacking {
+			p.frameIndex++
+			p.frameIndex %= numFrames
+
+			p.frameRec.Y = spriteSize * Attack
+
+			if p.frameIndex == 5 {
+				p.Attacking = false
+			}
+		} else {
+			p.frameIndex++
+			p.frameIndex %= numFrames
+			p.frameRec.Y = spriteSize * Idle
+		}
+
 		p.frameRec.X = float32(spriteSize * p.frameIndex)
 	}
 }
 
 func (p *Player) Draw() {
-	rec := rl.NewRectangle(p.Position.X+spriteSize/2-35, p.Position.Y+30, 70, 10)
-	rl.DrawRectangleRec(rec, rl.Green)
-	rl.DrawRectangleLinesEx(rec, 3, rl.Black)
+	p.DrawHealthBar()
 	rl.DrawTextureRec(*p.texture, p.frameRec, p.Position, p.color)
+}
+
+func (p *Player) DrawHealthBar() {
+	rec := rl.NewRectangle(p.Position.X+spriteSize/2-35, p.Position.Y+30, 70, 10)
+	healthRec := rl.NewRectangle(p.Position.X+spriteSize/2-35, p.Position.Y+30, 70*p.Health, 10)
+	rl.DrawRectangleRec(rec, rl.Red)
+	rl.DrawRectangleRec(healthRec, rl.Green)
+	rl.DrawRectangleLinesEx(rec, 3, rl.Black)
 }
 
 func (p *Player) MoveHitbox() rl.Rectangle {
